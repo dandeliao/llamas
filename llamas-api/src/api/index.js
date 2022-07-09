@@ -1,11 +1,12 @@
 const express = require('express');
+const cors = require('cors');
 const { oneRound, getWorldData, stopSimulation } = require('../engine/simulateWorld');
 const { randomGround, randomLlamas } = require("../engine/createWorld");
 const _ = require('lodash');
 
-
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
@@ -40,10 +41,10 @@ app.get('/', (req, res) => {
 	res.send('Welcome to llamas!');
 });
 
-app.get('/start', (req, res) => {
+app.post('/run', (req, res) => {
 
 	const oldWorld = {'ground': randomGround(30, 30), 'llamas': randomLlamas(30, 30)};
-	const newWorld = runSimulation(oldWorld.ground, oldWorld.llamas, 3);
+	const newWorld = runSimulation(oldWorld.ground, oldWorld.llamas, req.body.steps);
 	res.json({
 		'before': oldWorld,
 		'after': newWorld
