@@ -5,8 +5,32 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>llamas</title>
+	<link rel="stylesheet" type="text/css" href="index.css">
 </head>
 <body>
-	
+
+	<div class="container">
+		<header>
+			<h1>llamas</h1>
+			<h3>are marvelous after summer</h3>	
+		</header>
+
+		<main>
+			
+			<form id="formSimulation">
+				<label for="steps"># of steps</label>
+				<input type="text" id="steps" name="steps">
+				<input type="submit" id="run" value="run">
+			</form>
+
+			<div class="viewer">
+				<canvas class="layer" id="world">world view</canvas>
+			</div>
+
+		</main>
+	</div>
+
+	<script src="index.js"></script>
+
 </body>
 </html>
