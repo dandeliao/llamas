@@ -16,6 +16,7 @@
   "author": "dandeliao",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.1",
     "lodash": "^4.17.21"
   },
