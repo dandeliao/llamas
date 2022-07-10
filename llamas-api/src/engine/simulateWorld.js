@@ -1,4 +1,5 @@
 const { randomGround, randomLlamas } = require("./createWorld");
+const _ = require('lodash');
 
 // ---
 // auxiliary functions
@@ -25,8 +26,8 @@ function indexOfMax(arr) {
 // returns position if boundaries where to warp around themselves (e.g. going all the way down makes you come out of the top)
 function warpPosition(line, column, numberOfLines, numberOfColumns) {
 
-	let l = line;
-	let c = column;
+	let l = _.clone(line);
+	let c = _.clone(column);
 
 	if (line >= numberOfLines) {
 		l = line - numberOfLines;
@@ -142,8 +143,8 @@ function decideAction(motorSignals) {
 
 function nextPosition(llama, action) {
 
-	let positionLine = llama.line;
-	let positionColumn = llama.column;
+	let positionLine = _.clone(llama.line);
+	let positionColumn = _.clone(llama.column);
 
 	if (action === 'dull') {
 		return [positionLine, positionColumn];
@@ -162,13 +163,15 @@ function nextPosition(llama, action) {
 }
 
 function conflictingPositions(position, llamas) {
-	llamas.forEach(llama => {
-		if (llama.line === position[0]) {
-			if (llama.column == position[1]) {
+
+	for (let i = 0; i < llamas.length; i++) {
+		if (llamas[i].line === position[0]) {
+			if (llamas[i].column === position[1]) {
 				return true;
 			}
 		}
-	});
+	}
+
 	return false;
 }
 
@@ -181,7 +184,7 @@ function updateGround(ground, llamas) {
 				if ((llamas[k].line === i) && (llamas[k].column === j) && (llamas[k].action === 'eat')) {
 					let newGroundValue = ground[i][j] - 1;
 					if (newGroundValue >= 0) {
-						ground[i][j] = newGroundValue;
+						ground[i][j] = _.clone(newGroundValue);
 					}
 				}
 			}
@@ -194,26 +197,33 @@ function updateGround(ground, llamas) {
 // updates llamas
 function updateLlamas (ground, llamas) {
 	
-	llamas.forEach( llama => {
+	for (let l = 0; l < llamas.length; l++) {
+
+		let llama = llamas[l];
 
 		let motorSignals = brainSimulation(llama, ground);
 		let nextAction = decideAction(motorSignals);
 		let newPosition = nextPosition(llama, nextAction);
 
 		let warpedPos = warpPosition(newPosition[0], newPosition[1], ground.length, ground[0].length); // adjusts new position for round world
-		newPosition[0] = warpedPos.line;
-		newPosition[1] = warpedPos.column;
-		
-		if (conflictingPositions(newPosition, llamas) === true) {
-			console.log('conflito de llamas');
-			llama.action = 'dull';
-			newPosition = [llama.line, llama.column]; // on conflict don't move
+		newPosition[0] = _.clone(warpedPos.line);
+		newPosition[1] = _.clone(warpedPos.column);
+
+		if ((nextAction !== 'dull') && (nextAction !== 'eat')) {
+			if (conflictingPositions(newPosition, llamas) === true) {
+				console.log('conflito de llamas');
+				llama.action = 'dull';
+				newPosition = [llama.line, llama.column]; // on conflict don't move
+			} else {
+				console.log('anda sem conflito');
+				llama.action = nextAction;
+			}
 		} else {
 			llama.action = nextAction;
-			llama.line = newPosition[0];
-			llama.column = newPosition[1];
 		}
-	});
+		llama.line = newPosition[0];
+		llama.column = newPosition[1];
+	}
 
 	return llamas;
 
