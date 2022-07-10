@@ -69,9 +69,20 @@ function randomLlamas (numberOfLines, numberOfColumns) {
 	const maxLlamas = Math.floor(worldSize/10);
 	let llamas = new Array (randomInteger(minLlamas, maxLlamas));
 
+	linesArray = [];
+	columnsArray = [];
+
 	for (let i = 0; i < llamas.length; i++) {
+		
 		let positionLine = randomInteger(0, numberOfLines - 1);
 		let positionColumn = randomInteger(0, numberOfColumns - 1);
+
+		while ((linesArray.indexOf(positionLine) !== -1) && (columnsArray.indexOf(positionColumn) !== -1)) {
+			// tries again until position is not already occupied
+			positionLine = randomInteger(0, numberOfLines - 1);
+			positionColumn = randomInteger(0, numberOfColumns - 1);
+		}
+
 		const viewRange = randomInteger(0, 2);
 		const neuronsByLayer = randomInteger(10, 100);
 		const layers = randomInteger(3, 10);
