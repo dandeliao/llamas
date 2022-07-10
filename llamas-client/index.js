@@ -6,7 +6,7 @@ const worldCanvas = document.getElementById('world');
 // ---
 // functions for drawing on canvas
 
-const scale = 30;
+const scale = 33;
 
 // returns a color palette of n colors from colorLow to colorHigh
 function colorPalette (colorLow, colorHigh, n) {
@@ -41,7 +41,7 @@ function drawMap (canvas, ground) {
 
 			let color = palette[value];
 			ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-			ctx.fillRect(j * scale, i * scale, scale, scale);
+			ctx.fillRect(i * scale, j * scale, scale, scale);
 		}
 	}
 }
@@ -50,17 +50,33 @@ function drawMap (canvas, ground) {
 function drawLlamas (canvas, llamas) {
 
 	const ctx = canvas.getContext('2d');
+	ctx.strokeStyle = 'rgb(0, 0, 0)';
+	ctx.lineWidth = 3;
 
 	for (let l = 0; l < llamas.length; l++) {
 		let x = llamas[l].line * scale;
 		let y = llamas[l].column * scale;
-
-		ctx.strokeStyle = 'rgb(0, 0, 0)';
 		ctx.strokeRect(x, y, scale, scale);
-
 	}
 }
 
+// "animation" (playback)
+stepSize = 1000; // miliseconds
+function delay () {
+	return new Promise(r => setTimeout(r, stepSize));
+}
+async function runStep (canvas, world) {
+	console.log('---')
+	console.log(world);
+	drawMap(canvas, world.ground);
+	drawLlamas(canvas, world.llamas);
+	await delay();
+}
+async function play (canvas, timeline) {
+	for (let i = 0; i < timeline.length; i++) {
+		await runStep(canvas, timeline[i]);
+	}
+}
 
 // ---
 // event listeners
@@ -79,12 +95,13 @@ formSimulation.addEventListener('submit', e => {
 		body: JSON.stringify(steps)
 	})
 		.then(res => res.json())
-		.then(r => {
+		.then(timeline => {
 
-			console.log(r);
+			console.log(timeline);
 
-			drawMap(worldCanvas, r.before.ground);
-			drawLlamas(worldCanvas, r.before.llamas);
+			play(worldCanvas, timeline);
+			/* drawMap(worldCanvas, r.before.ground);
+			drawLlamas(worldCanvas, r.before.llamas); */
 
 		})
 
