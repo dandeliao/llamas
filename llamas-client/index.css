@@ -18,7 +18,7 @@ html {
 h1 {font-size: 1.8em;}
 h2 {font-size: 1.5em;}
 h3 {font-size: 1.2em;}
-
+a {color:linen}
 
 .container {
 	max-width: 960px;
@@ -46,6 +46,17 @@ main {
 	gap: 1em;
 	padding: 1em;
 	margin-bottom: 2em;
+}
+
+footer {
+	background-color:rosybrown;
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: baseline;
+	gap: 1em;
+	padding: 0.3em;
+	margin-top: 2em;
 }
 
 .viewer {
