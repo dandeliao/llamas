@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const { oneRound, getWorldData, stopSimulation } = require('../engine/simulateWorld');
-const { randomGround, randomLlamas } = require("../engine/createWorld");
+const { oneRound, getWorldData, stopSimulation } = require('./engine/simulateWorld');
+const { randomGround, randomLlamas } = require("./engine/createWorld");
 const _ = require('lodash');
 
 const app = express();
@@ -22,16 +22,18 @@ function runSimulation(initialGround, initialLlamas, rounds) {
 	let llamas = _.cloneDeep(initialLlamas);
 	
 	let newWorld;
+	let timeline = [{'ground': ground, 'llamas': llamas}];
 	
 	for (let r = 0; r < rounds; r++) {
 		console.log('--- round', r);
 		newWorld = oneRound(ground, llamas);
+		timeline.push(_.cloneDeep(newWorld));
 		ground = _.cloneDeep(newWorld.ground);
 		llamas = _.cloneDeep(newWorld.llamas);
 	}
 	
 	console.log('Simulation has finished.');
-	return {'ground': ground, 'llamas': llamas}
+	return timeline;
 }
 
 // ---
@@ -44,11 +46,8 @@ app.get('/', (req, res) => {
 app.post('/run', (req, res) => {
 
 	const oldWorld = {'ground': randomGround(30, 30), 'llamas': randomLlamas(30, 30)};
-	const newWorld = runSimulation(oldWorld.ground, oldWorld.llamas, req.body.steps);
-	res.json({
-		'before': oldWorld,
-		'after': newWorld
-	});
+	const timeline = runSimulation(oldWorld.ground, oldWorld.llamas, req.body.steps);
+	res.json(timeline);
 });
 
 
