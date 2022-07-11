@@ -1,11 +1,12 @@
-const { indexOfMax, warpPosition, toLinearArray } = require("./utils");
+const { indexOfMax, warpPosition, toLinearArray, randomInteger } = require("./utils");
 const _ = require('lodash');
+const { sortedLastIndexOf } = require("lodash");
 
 
 // ---
 // senses
 
-// llama vision sensory input
+// llama visual sensory input
 function fieldOfView (llama, ground) {
 
 	const field = new Array ();
@@ -49,11 +50,76 @@ function fieldOfView (llama, ground) {
 // 3 - digestão (comer eleva a energia)
 // 4 - reprodução (reproduzir consome muita energia)
 
+function updateHomeostatic (llama, ground) {
+	
+	let action = llama.action;
+	let delta = -1; // standby use of energy
+
+	switch(action) {
+		case 'eat':
+			delta += -1; // energy spent in the act of eating
+			if (([ground[llama.line][llama.column]] > 0) && (llama.diet === 'mana')) {
+				delta += 9;
+			} else if (([ground[llama.line][llama.column]] < 4) && (llama.diet === 'void')) {
+				delta += 9;
+			}
+			break;
+		case 'up':
+		case 'down':
+		case 'left':
+		case 'right':
+			delta += -1;
+			break;
+		case 'reproduce':
+			delta += -10;
+			break;
+	}
+
+	let newEnergy = llama.energy + delta;
+	if (newEnergy < 0) {
+		newEnergy = 0;
+	} else if (newEnergy > 30) {
+		newEnergy = 30;
+	}
+
+	llama.energy = newEnergy;
+
+}
+
+function isDead (llama) {
+	if (llama.energy <= 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 // ---
 // reproductive system
 
 // assexual e/ou sexual (outros tipos?)
 // cópia com mutações
+
+function reproduce (llama) {
+	if (llama.reproduction === 'asexual') {
+		if (llama.energy > 10) {
+			let puppy = _.cloneDeep(llama);
+			puppy.energy = 10;
+			puppy.action = 'dull';
+			//mutate(puppy);
+			return puppy;
+		}
+	}
+	return null;
+}
+
+/* function mutate(puppy) {
+
+	let numberOfMutations = randomInteger(0, 20);
+
+
+
+} */
 
 // ---
 // nervous system
@@ -86,6 +152,8 @@ function brainSimulation (llama, ground) {
 
 	const sight = fieldOfView(llama, ground);
 	let signals = toLinearArray(sight);
+	signals.push(llama.energy);
+	console.log('sensory signals of a llama:', signals);
 
 	for (let i = 0; i < llama.brain.length; i++) {
 		let outputSignals = new Array();
@@ -118,6 +186,8 @@ function decideAction(motorSignals) {
 		return 'right';
 	} else if (biggestSignal === 5) {
 		return 'up';
+	} else if (biggestSignal === 6) {
+		return 'reproduce';
 	}
 
 }
@@ -126,5 +196,8 @@ function decideAction(motorSignals) {
 // exports
 
 module.exports = {
-	brainSimulation
+	brainSimulation,
+	updateHomeostatic,
+	isDead,
+	reproduce
 }

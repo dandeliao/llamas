@@ -7,7 +7,7 @@ const { randomInteger, randomRealNumber, generateMatrix, coinFlip } = require('.
 function generateBrain(layers, neuronsByLayer, inputs, outputs) {
 
 	let brain = new Array(layers + 2); // total layers = number of hidden layers + input layer + output layer
-	brain[0] = new Array(inputs);
+	brain[0] = new Array(inputs); // first layer
 
 	let hiddenLayers = generateMatrix(layers, neuronsByLayer);
 	for(let i = 0; i < hiddenLayers.length; i++) {
@@ -15,7 +15,7 @@ function generateBrain(layers, neuronsByLayer, inputs, outputs) {
 		brain[i+1] = hiddenLayers[i];
 	}
 
-	brain[brain.length - 1] = new Array(outputs);
+	brain[brain.length - 1] = new Array(outputs); // last layer
 
 	for(let i = 0; i < brain.length; i++) {
 		for (let j = 0; j < brain[i].length; j++) {
@@ -72,7 +72,12 @@ function generateEndocrine (brain) {
 
 // homeostatic system generator
 function generateHomeostatic () {
-	return randomInteger(1, 10);
+	return randomInteger(7, 30); // initial energy level of a llama. Should be hereditary, not random
+}
+
+// reproductive system generator
+function generateReproductive () {
+	return 'asexual'; // there can be more variables and options and it should be hereditary
 }
 
 // ---
@@ -113,22 +118,28 @@ function randomLlamas (numberOfLines, numberOfColumns) {
 			positionColumn = randomInteger(0, numberOfColumns - 1);
 		}
 
+		let energy = generateHomeostatic();
 		const heads = coinFlip();
 		let diet = 'mana';
 		if (heads) {
 			diet = 'void';
 		}
 
+		let reproduction = generateReproductive();
+
 		const viewRange = randomInteger(0, 2); // 0 => 1x1 (own) square, 1 => 3x3 square, 2 => 5x5 square
 		const sizeOfViewRange = Math.pow((2 * viewRange) + 1, 2);
+		const sizeOfSensoryInput = sizeOfViewRange + 1; // sensory data = visual input + energy level
 		const neuronsByLayer = randomInteger(4, 20);
 		const layers = randomInteger(2, 5);
-		const brain = generateBrain(layers, neuronsByLayer, sizeOfViewRange, 6); // for now, 6 actions (dull, eat, up, down, left, right)
+		const brain = generateBrain(layers, neuronsByLayer, sizeOfSensoryInput, 7); // for now, 7 actions (dull, eat, up, down, left, right, reproduce)
 		llamas[i] = {
 			'line': positionLine,
 			'column': positionColumn,
 			'viewRange': viewRange,
 			'diet': diet,
+			'energy': energy,
+			'reproduction': reproduction,
 			'brain': brain
 		}
 	}
