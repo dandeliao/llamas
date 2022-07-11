@@ -37,7 +37,7 @@ function drawMap (canvas, ground) {
 
 	for (let i = 0; i < ground.length; i++) {
 		for (let j = 0; j < ground[0].length; j++) {
-			let value = ground[i][j];
+			let value = ground[j][i];
 
 			let color = palette[value];
 			ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
@@ -54,8 +54,8 @@ function drawLlamas (canvas, llamas) {
 	ctx.lineWidth = 3;
 
 	for (let l = 0; l < llamas.length; l++) {
-		let x = llamas[l].line * scale;
-		let y = llamas[l].column * scale;
+		let y = llamas[l].line * scale;
+		let x = llamas[l].column * scale;
 		ctx.strokeRect(x, y, scale, scale);
 	}
 }
