@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
 
 app.post('/run', (req, res) => {
 
-	const oldWorld = {'ground': randomGround(30, 30), 'llamas': randomLlamas(30, 30)};
+	const oldWorld = {'ground': randomGround(40, 40), 'llamas': randomLlamas(40, 40)};
 	const timeline = runSimulation(oldWorld.ground, oldWorld.llamas, req.body.steps);
 	res.json(timeline);
 });

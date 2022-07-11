@@ -1,33 +1,57 @@
+const { randomInteger, randomRealNumber, generateMatrix, coinFlip } = require('./utils');
+
 // ---
-// auxiliary functions
-
-// random integer generator
-function randomInteger (min, max) {
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-// 2D matrix generator
-function generateMatrix(lines, columns) {
-	let matrix = new Array (lines);
-
-	for (let i = 0; i < matrix.length; i++) {
-		let line = new Array (columns);
-		for (let j = 0; j < line.length; j++) {
-			line[j] = null;
-		}
-		matrix[i] = line;
-	}
-
-	return matrix;
-
-}
+// llama physiology
 
 // brain generator
-function generateBrain(layers, neuronsByLayer) {
-	
-	let brain = generateMatrix(layers, neuronsByLayer);
+function generateBrain(layers, neuronsByLayer, inputs, outputs) {
+
+	let brain = new Array(layers + 2); // total layers = number of hidden layers + input layer + output layer
+	brain[0] = new Array(inputs);
+
+	let hiddenLayers = generateMatrix(layers, neuronsByLayer);
+	for(let i = 0; i < hiddenLayers.length; i++) {
+		hiddenLayers[i] = new Array(neuronsByLayer);
+		brain[i+1] = hiddenLayers[i];
+	}
+
+	brain[brain.length - 1] = new Array(outputs);
 
 	for(let i = 0; i < brain.length; i++) {
+		for (let j = 0; j < brain[i].length; j++) {
+			let weights;
+			if (i === 0) {
+				// first layer weights
+				weights = new Array (inputs);
+			} else {
+				weights = new Array (brain[i - 1].length);
+			}
+
+			for (let k = 0; k < weights.length; k++) {
+				weights[k] = randomRealNumber(-5, 5);
+			}
+			brain[i][j] = {
+				'bias': randomRealNumber(-5, 5),
+				'weights': weights
+			}
+		}
+	}
+
+	return brain;
+}
+
+// endocrine system generator
+function generateEndocrine (brain) {
+
+	// this sizes are temporary - it's the inverse size of the brain matrix, but shouldn't be necessarily
+	// what is necessary is that the first layer gets all inputs.
+	// the last layer may have any size, but there must be a "bridge" of weights between the output signals and each of the brain layers
+	// put "bridge" in the endocrine or in the brain?
+	let neuronsByLayer = brain.length;
+	let layers = brain[0].length;
+	let endocrine = generateMatrix(layers, neuronsByLayer);
+
+	for(let i = 0; i < endocrine.length; i++) {
 		let layer = new Array(neuronsByLayer);
 		for (let j = 0; j < layer.length; j++) {
 			let weights = new Array (neuronsByLayer);
@@ -35,14 +59,20 @@ function generateBrain(layers, neuronsByLayer) {
 				weights[k] = Math.random(); // random weight, from 0 to under 1
 			}
 			layer[j] = {
-				'activation': Math.random(), // random activation threshold, from 0 to under 1
+				'bias': 3 * Math.random(), // random bias, from 0 to under 3
 				'weights': weights
 			}
 		}
-		brain[i] = layer;
+		endocrine[i] = layer;
 	}
 
-	return brain;
+	return endocrine;
+
+}
+
+// homeostatic system generator
+function generateHomeostatic () {
+	return randomInteger(1, 10);
 }
 
 // ---
@@ -62,7 +92,7 @@ function randomGround(numberOfLines, numberOfColumns) {
 	return ground;
 }
 
-// creates random llamas and their brains
+// creates random llamas
 function randomLlamas (numberOfLines, numberOfColumns) {
 	const worldSize = numberOfLines * numberOfColumns;
 	const minLlamas = Math.floor(worldSize/100);
@@ -78,19 +108,27 @@ function randomLlamas (numberOfLines, numberOfColumns) {
 		let positionColumn = randomInteger(0, numberOfColumns - 1);
 
 		while ((linesArray.indexOf(positionLine) !== -1) && (columnsArray.indexOf(positionColumn) !== -1)) {
-			// tries again until position is not already occupied
+			// tries again if position is already occupied
 			positionLine = randomInteger(0, numberOfLines - 1);
 			positionColumn = randomInteger(0, numberOfColumns - 1);
 		}
 
-		const viewRange = randomInteger(0, 2);
-		const neuronsByLayer = randomInteger(10, 100);
-		const layers = randomInteger(3, 10);
-		const brain = generateBrain(layers, neuronsByLayer);
+		const heads = coinFlip();
+		let diet = 'mana';
+		if (heads) {
+			diet = 'void';
+		}
+
+		const viewRange = randomInteger(0, 2); // 0 => 1x1 (own) square, 1 => 3x3 square, 2 => 5x5 square
+		const sizeOfViewRange = Math.pow((2 * viewRange) + 1, 2);
+		const neuronsByLayer = randomInteger(4, 20);
+		const layers = randomInteger(2, 5);
+		const brain = generateBrain(layers, neuronsByLayer, sizeOfViewRange, 6); // for now, 6 actions (dull, eat, up, down, left, right)
 		llamas[i] = {
 			'line': positionLine,
 			'column': positionColumn,
 			'viewRange': viewRange,
+			'diet': diet,
 			'brain': brain
 		}
 	}
