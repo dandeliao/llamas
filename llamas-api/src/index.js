@@ -3,6 +3,7 @@ const cors = require('cors');
 const { oneRound, getWorldData, stopSimulation } = require('./engine/simulateWorld');
 const { randomGround, randomLlamas } = require("./engine/createWorld");
 const _ = require('lodash');
+const { randomInteger, coinFlip } = require('./engine/utils');
 
 const app = express();
 
@@ -40,6 +41,57 @@ function runSimulation(initialGround, initialLlamas, rounds) {
 	
 	for (let r = 0; r < rounds; r++) {
 		console.log('--- round', r);
+		// random burst or drop of energy
+		let lottery = randomInteger(0, 50);
+		if ((lottery === 0)||(lottery === 1)) {
+		for (let i = 0; i < ground.length; i++) {
+			for (let j = 0; j < ground[0].length; j++) {
+				if (((ground[i][j] > 0) && (ground[i][j] < 3))) {
+					console.log('pumping up energy...')
+					ground[i][j]++;
+				}
+			}
+		}
+		} else if ((lottery === 2)) {
+			for (let i = 0; i < ground.length; i++) {
+				for (let j = 0; j < ground[0].length; j++) {
+					if ((ground[i][j] === 4 || (ground[i][j] === 3))) {
+						if (coinFlip()) {
+							console.log('droping down energy...')
+							ground[i][j]--;
+						}
+					}
+				}
+			}
+		} else if ((lottery === 3)||(lottery === 4)) {
+			for (let i = 0; i < ground.length; i++) {
+				for (let j = 0; j < ground[0].length; j++) {
+					if (ground[i][j] === 0) {
+						//if (coinFlip()) {
+							//if (coinFlip()){
+								console.log('regrowing voids...')
+								ground[i][j] = 1;
+							//}
+						//}
+					}
+				}
+			}
+		} else if (lottery === 5) {
+			for (let i = 0; i < ground.length; i++) {
+				for (let j = 0; j < ground[0].length; j++) {
+					if (ground[i][j] >= 3) {
+						if (coinFlip()) {
+							if (coinFlip()) {
+								console.log('bad weather...')
+								ground[i][j] = ground[i][j] - 3;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+
 		newWorld = oneRound(ground, llamas);
 		ground = _.cloneDeep(newWorld.ground);
 		llamas = _.cloneDeep(newWorld.llamas);
