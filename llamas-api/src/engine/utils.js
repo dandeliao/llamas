@@ -1,7 +1,5 @@
-// ---
-// auxiliary functions
-
 const _ = require('lodash');
+const fs = require('fs');
 
 // random integer generator
 function randomInteger (min, max) {
@@ -20,6 +18,34 @@ function coinFlip () {
 // random real number generator
 function randomRealNumber (min, max) {
 	return Math.random() * (max - min) + min;
+}
+
+// random unique color
+function randomUniqueColor (colorsInUse) {
+	
+	let r = randomInteger(0, 256);
+	let g = randomInteger(0, 256);
+	let b = randomInteger(0, 256);
+
+	let i = 0;
+	while(i < colorsInUse.length) {
+		if ((Math.abs(r - colorsInUse[i][0]) > 10)
+			|| (Math.abs(g - colorsInUse[i][1]) > 10)
+	 		|| (Math.abs(b - colorsInUse[i][2]) > 10)
+			) {
+			i++;
+		} else {
+			//console.log('color is already in use, starting over');
+			r = randomInteger(0, 256);
+			g = randomInteger(0, 256);
+			b = randomInteger(0, 256);
+			i = 0;
+		}
+	}
+
+	color = [r, g, b];
+	//console.log('new chosen color:', color);
+	return color;
 }
 
 // 2D matrix generator
@@ -47,6 +73,21 @@ function toLinearArray (biArray) {
 		}
 	}
 	return uniArray;
+}
+
+// returns array containing just the solicited property
+function mapProperty (property, array) {
+	let mapped = array.map(a => {
+		if (a[property]) {
+			return a[property];
+		} else {
+			return;
+		}
+	});
+	//console.log(mapped.filter(Array));
+	return mapped.filter(n => {
+		return (n != undefined) && (n != null);
+	});
 }
 
 // returns index of the greatest value in an array 
@@ -89,12 +130,23 @@ function warpPosition(line, column, numberOfLines, numberOfColumns) {
 	return {'line': l, 'column': c}
 }
 
+function saveInfo(path, info) {
+	try {
+		fs.writeFileSync(path, JSON.stringify(info) + '\r\n', { flag: 'a' });
+	} catch (err) {
+		console.log('error when saving data:', err);
+	}
+}
+
 module.exports = {
 	randomInteger,
 	randomRealNumber,
+	randomUniqueColor,
 	coinFlip,
 	generateMatrix,
 	toLinearArray,
+	mapProperty,
 	indexOfMax,
-	warpPosition
+	warpPosition,
+	saveInfo
 }
