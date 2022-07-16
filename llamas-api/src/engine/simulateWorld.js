@@ -1,6 +1,8 @@
-const { warpPosition, randomInteger } = require('./utils');
+const { warpPosition, randomInteger, mapProperty } = require('./utils');
 const { brainSimulation, updateHomeostatic, isDead, reproduce } = require('./simulatePhisiology');
 const _ = require('lodash');
+const { map } = require('lodash');
+const fs = require('fs');
 
 // ---
 
@@ -87,7 +89,7 @@ function updateGround(ground, llamas) {
 // updates llamas
 function updateLlamas (ground, llamas) {
 	
-	console.log('llamas.length', llamas.length);
+	console.log('# of llamas:', llamas.length);
 
 	let puppies = [];
 
@@ -95,10 +97,10 @@ function updateLlamas (ground, llamas) {
 
 		let llama = llamas[l];
 
-		let nextAction = brainSimulation(llama, ground);
+		let nextAction = brainSimulation(llama, ground, llamas);
 		let newPosition = nextPosition(llama, nextAction);
 
-		console.log('llama #', l, nextAction);
+		//console.log('llama #', l, nextAction);
 
 		let warpedPos = warpPosition(newPosition[0], newPosition[1], ground.length, ground[0].length); // adjusts new position for round world
 		newPosition[0] = _.clone(warpedPos.line);
@@ -122,19 +124,19 @@ function updateLlamas (ground, llamas) {
 
 		if ((nextAction !== 'dull') && (nextAction !== 'eat') && (nextAction !== 'reproduce')) {
 			if (conflictingPositions(newPosition, llamas) === true) {
-				console.log('stops before crashing');
+				//console.log('stops before crashing');
 				llama.action = 'dull';
 				newPosition = [llama.line, llama.column]; // on conflict don't move
 			} else {
-				console.log('walks peacefully');
+				//console.log('walks peacefully');
 				llama.action = nextAction;
 			}
 		} else {
 			if (nextAction === 'eat') { 
-				console.log('eats nom mnom');
+				//console.log('eats nom mnom');
 			} else if (nextAction === 'reproduce') {
 				
-				console.log('trying to make a puppy');
+				//console.log('trying to make a puppy');
 				let puppy = null;
 				let puppyPosition = null;
 				
@@ -160,18 +162,20 @@ function updateLlamas (ground, llamas) {
 				if (aroundMom.length > 0) {
 
 					puppyPosition = aroundMom[randomInteger(0, aroundMom.length - 1)];
-					//puppyPosition = freePositionsArray[randomInteger(0, freePositionsArray.length - 1)];
 					//console.log('new puppy coming! position:', puppyPosition);
 
 					puppy = reproduce(llama);
-				if (puppy) {
-					puppy.line = puppyPosition[0];
-					puppy.column = puppyPosition[1];
-					puppies.push(puppy);
-					console.log('gave birth :)');
+					if (puppy) {
+						puppy.line = puppyPosition[0];
+						puppy.column = puppyPosition[1];
+						puppies.push(puppy);
+						//console.log('gave birth :)');
+					} else {
+						nextAction = 'dull';
+						//console.log('no baby this time :(');
+					}
 				} else {
-					nextAction = 'dull';
-					console.log('no baby this time :(');
+					//console.log('no space for babies now');
 				}
 			}
 			llama.action = nextAction;
@@ -186,14 +190,14 @@ function updateLlamas (ground, llamas) {
 	// checks for dead llamas and remove them
 	for (let l = llamas.length - 1; l >= 0; l--) {
 		if (isDead(llamas[l])) {
-			console.log('✝✝✝ a llama died ✝✝✝');
+			//console.log('✝✝✝ a llama died ✝✝✝');
 			llamas.splice(l, 1);
 		}
 	}
 
 	// checks for new born puppies and add them
 	for (let p = 0; p < puppies.length; p++) {
-		console.log('☆☆☆ a llama was born ☆☆☆');
+		//console.log('☆☆☆ a llama was born ☆☆☆');
 		llamas.push(puppies[p]);
 	}
 
