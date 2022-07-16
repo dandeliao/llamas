@@ -1,40 +1,47 @@
-const { randomInteger, randomRealNumber, generateMatrix, coinFlip } = require('./utils');
+const { randomInteger, randomRealNumber, generateMatrix, coinFlip , mapProperty, randomUniqueColor } = require('./utils');
 
 // ---
 // llama physiology
 
+// layer of neurons generator
+function generateLayer (numberOfNeurons, numberOfInputs) {
+	let layer = new Array(numberOfNeurons);
+	for (let i = 0; i < layer.length; i++) {
+		let weights = new Array (numberOfInputs);
+		for (let j = 0; j < weights.length; j++) {
+			weights[j] = randomRealNumber(-100, 100);
+		}
+		layer[i] = {
+			'bias': randomRealNumber(-100, 100),
+			'weights': weights
+		}
+	}
+	return layer;
+}
+
 // brain generator
 function generateBrain(layers, neuronsByLayer, inputs, outputs) {
 
+	// creates empty layers
 	let brain = new Array(layers + 2); // total layers = number of hidden layers + input layer + output layer
 	brain[0] = new Array(inputs); // first layer
-
-	let hiddenLayers = generateMatrix(layers, neuronsByLayer);
+	let hiddenLayers = generateMatrix(layers, neuronsByLayer); // hidden layers
 	for(let i = 0; i < hiddenLayers.length; i++) {
 		hiddenLayers[i] = new Array(neuronsByLayer);
 		brain[i+1] = hiddenLayers[i];
 	}
-
 	brain[brain.length - 1] = new Array(outputs); // last layer
 
+	// initializes bias and weights for each neuron
 	for(let i = 0; i < brain.length; i++) {
-		for (let j = 0; j < brain[i].length; j++) {
-			let weights;
-			if (i === 0) {
-				// first layer weights
-				weights = new Array (inputs);
-			} else {
-				weights = new Array (brain[i - 1].length);
-			}
-
-			for (let k = 0; k < weights.length; k++) {
-				weights[k] = randomRealNumber(-5, 5);
-			}
-			brain[i][j] = {
-				'bias': randomRealNumber(-5, 5),
-				'weights': weights
-			}
+		let inputSize;
+		if (i === 0) {
+			inputSize = inputs;
+		} else {
+			inputSize = brain[i - 1].length;
 		}
+		let layer = generateLayer(brain[i].length, inputSize);
+		brain[i] = layer;
 	}
 
 	return brain;
@@ -59,7 +66,7 @@ function generateEndocrine (brain) {
 				weights[k] = Math.random(); // random weight, from 0 to under 1
 			}
 			layer[j] = {
-				'bias': 3 * Math.random(), // random bias, from 0 to under 3
+				'bias': (4 * Math.random()) - 2, // random bias, from 0 to under 3 (changed)
 				'weights': weights
 			}
 		}
@@ -72,7 +79,7 @@ function generateEndocrine (brain) {
 
 // homeostatic system generator
 function generateHomeostatic () {
-	return randomInteger(7, 30); // initial energy level of a llama. Should be hereditary, not random
+	return randomInteger(80, 100); // initial energy level of a llama. Should be hereditary, not random
 }
 
 // reproductive system generator
@@ -100,8 +107,8 @@ function randomGround(numberOfLines, numberOfColumns) {
 // creates random llamas
 function randomLlamas (numberOfLines, numberOfColumns) {
 	const worldSize = numberOfLines * numberOfColumns;
-	const minLlamas = Math.floor(worldSize/100);
-	const maxLlamas = Math.floor(worldSize/10);
+	const minLlamas = Math.floor(worldSize/5);
+	const maxLlamas = Math.floor(worldSize/4);
 	let llamas = new Array (randomInteger(minLlamas, maxLlamas));
 
 	linesArray = [];
@@ -121,18 +128,21 @@ function randomLlamas (numberOfLines, numberOfColumns) {
 		let energy = generateHomeostatic();
 		const heads = coinFlip();
 		let diet = 'mana';
-		if (heads) {
+		/* if (heads) {
 			diet = 'void';
+		} */
+
 		}
 
 		let reproduction = generateReproductive();
 
 		const viewRange = randomInteger(0, 2); // 0 => 1x1 (own) square, 1 => 3x3 square, 2 => 5x5 square
 		const sizeOfViewRange = Math.pow((2 * viewRange) + 1, 2);
-		const sizeOfSensoryInput = sizeOfViewRange + 1; // sensory data = visual input + energy level
-		const neuronsByLayer = randomInteger(4, 20);
-		const layers = randomInteger(2, 5);
-		const brain = generateBrain(layers, neuronsByLayer, sizeOfSensoryInput, 7); // for now, 7 actions (dull, eat, up, down, left, right, reproduce)
+		const sizeOfLlamaRange = sizeOfViewRange; // same as view range, but for knowing if there's a llama at each square of the visual field
+		const sizeOfSensoryInput = sizeOfViewRange + sizeOfLlamaRange + 1; // sensory data = visual input + llama input + energy level
+		const neuronsByLayer = randomInteger(10, 40);
+		const layers = randomInteger(1, 3);
+		const brain = generateBrain(layers, neuronsByLayer, sizeOfSensoryInput, 16); // for now, 7 actions (dull, eat, up, down, left, right, reproduce) represented by 5 binary outputs (see decideAction at phisiological simulation)
 		llamas[i] = {
 			'line': positionLine,
 			'column': positionColumn,
@@ -148,4 +158,4 @@ function randomLlamas (numberOfLines, numberOfColumns) {
 }
 
 
-module.exports = { randomGround, randomLlamas };
+module.exports = { randomGround, randomLlamas, generateLayer };
