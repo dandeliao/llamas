@@ -132,7 +132,10 @@ function randomLlamas (numberOfLines, numberOfColumns) {
 			diet = 'void';
 		} */
 
-		}
+		let colorsInUse = mapProperty('color', llamas);
+		console.log('colors in use:', colorsInUse);
+		let color = randomUniqueColor(colorsInUse);
+		//console.log('color of llama:', color);
 
 		let reproduction = generateReproductive();
 
@@ -146,6 +149,7 @@ function randomLlamas (numberOfLines, numberOfColumns) {
 		llamas[i] = {
 			'line': positionLine,
 			'column': positionColumn,
+			'color': color,
 			'viewRange': viewRange,
 			'diet': diet,
 			'energy': energy,
