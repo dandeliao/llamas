@@ -4,17 +4,17 @@ const _ = require('lodash');
 
 // ---
 
-function freePositions(ground, llamas) {
+function freePositions(ground, occupiedPositions) {
 
 	let freePositions = new Array;
 
 	for (let i = 0; i < ground.length; i++) {
 		for (let j = 0; j < ground[0].length; j++) {
 			freePositions.push([i,j]);
-			llamaLoop: for (let l = 0; l < llamas.length; l++) {
-				if ((llamas[l].line === i) && (llamas[l].column === j)) {
-					let popped = freePositions.pop();
-					break llamaLoop;
+			occupiedLoop: for (let k = 0; k < occupiedPositions.length; k++) {
+				if ((occupiedPositions[k][0] === i) && (occupiedPositions[k][1] === j)) {
+					freePositions.pop();
+					break occupiedLoop;
 				}
 			}
 		}
@@ -104,6 +104,22 @@ function updateLlamas (ground, llamas) {
 		newPosition[0] = _.clone(warpedPos.line);
 		newPosition[1] = _.clone(warpedPos.column);
 
+		// fills an array with currently occupied positions each in the format [line, column]
+		let linePositions = mapProperty('line', llamas);
+		let columnPositions = mapProperty('column', llamas);
+		let occupiedPositionsArray = [];
+		for (let i = 0; i < linePositions.length; i++) {
+			occupiedPositionsArray.push([linePositions[i], columnPositions[i]]);
+		}
+		linePositions = mapProperty('line', puppies);
+		columnPositions = mapProperty('column', puppies);
+		for (let i = 0; i < linePositions.length; i++) {
+			occupiedPositionsArray.push([linePositions[i], columnPositions[i]]);
+		}
+		
+		let freePositionsArray = freePositions(ground, occupiedPositionsArray);
+		//console.log('# of free positions:', freePositionsArray.length);
+
 		if ((nextAction !== 'dull') && (nextAction !== 'eat') && (nextAction !== 'reproduce')) {
 			if (conflictingPositions(newPosition, llamas) === true) {
 				console.log('stops before crashing');
@@ -121,16 +137,33 @@ function updateLlamas (ground, llamas) {
 				console.log('trying to make a puppy');
 				let puppy = null;
 				let puppyPosition = null;
-				let freePositionsArray = freePositions(ground, llamas);
-				if (freePositionsArray.length > 0) {
-					puppyPosition = freePositionsArray[randomInteger(0, freePositionsArray.length)];
+				
+				let aroundMom = [];
+				for (i = -1; i <= 1; i++) {
+					for (j = -1; j <= 1; j++) {
+						if (i === 0 && j === 0) {
+							continue; // position already occupied by mom llama doesn't count
+						//} else if (Math.abs(i) === Math.abs(j)){ // gives birth at an empty diagonal direction
+						} else if (i === j){
+							//console.log('i, j:', i, j);
+							let warp = warpPosition(llama.line + i, llama.column + j, ground.length, ground[0].length);
+
+							for (k = 0; k < freePositionsArray.length; k++) {
+								if ((freePositionsArray[k][0] === warp.line) && (freePositionsArray[k][1] === warp.column)) {
+									aroundMom.push([warp.line, warp.column]);
+								}
+							}
+						}
+					}
 				}
-				if (puppyPosition) {
+
+				if (aroundMom.length > 0) {
+
+					puppyPosition = aroundMom[randomInteger(0, aroundMom.length - 1)];
+					//puppyPosition = freePositionsArray[randomInteger(0, freePositionsArray.length - 1)];
+					//console.log('new puppy coming! position:', puppyPosition);
+
 					puppy = reproduce(llama);
-					console.log('puppy Position:', puppyPosition);
-				} else {
-					console.log('no space for babies now');
-				}
 				if (puppy) {
 					puppy.line = puppyPosition[0];
 					puppy.column = puppyPosition[1];
