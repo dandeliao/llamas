@@ -1,7 +1,6 @@
 const { indexOfMax, warpPosition, toLinearArray, randomUniqueColor, randomInteger, randomRealNumber, coinFlip, saveInfo } = require("./utils");
 const { generateLayer } = require('./createWorld');
 const _ = require('lodash');
-const { sortedLastIndexOf } = require("lodash");
 
 
 // ---
@@ -89,15 +88,15 @@ function fieldOfLlamaRadar (llama, ground, llamas) {
 function updateHomeostatic (llama, ground) {
 	
 	let action = llama.action;
-	let delta = -1; // standby use of energy
+	let delta = -6; // standby use of energy
 
 	switch(action) {
 		case 'eat':
-			delta += -1; // energy spent in the act of eating
-			if (([ground[llama.line][llama.column]] > 0) && (llama.diet === 'mana')) {
-				delta += 9;
-			} else if (([ground[llama.line][llama.column]] < 4) && (llama.diet === 'void')) {
-				delta += 9;
+			delta += -5; // energy used in the act of eating
+			if ((ground[llama.line][llama.column] > 0) && (llama.diet === 'mana')) {
+				delta += 60;
+			} else if ((ground[llama.line][llama.column] < 4) && (llama.diet === 'void')) {
+				delta += 60;
 			}
 			break;
 		case 'up':
@@ -114,8 +113,8 @@ function updateHomeostatic (llama, ground) {
 	let newEnergy = llama.energy + delta;
 	if (newEnergy < 0) {
 		newEnergy = 0;
-	} else if (newEnergy > 30) {
-		newEnergy = 30;
+	} else if (newEnergy > 100) {
+		newEnergy = 100;
 	}
 
 	llama.energy = newEnergy;
@@ -133,14 +132,11 @@ function isDead (llama) {
 // ---
 // reproductive system
 
-// assexual e/ou sexual (outros tipos?)
-// cópia com mutações
-
 function reproduce (llama) {
 	if (llama.reproduction === 'asexual') {
-		if (llama.energy > 10) {
+		if (llama.energy > 40) {
 			let puppy = _.cloneDeep(llama);
-			puppy.energy = 10;
+			puppy.energy = 40;
 			puppy.action = 'dull';
 			mutate(puppy);
 			return puppy;
@@ -217,7 +213,7 @@ function mutate(puppy) {
 				puppy.diet = 'mana';
 			} else {
 				console.log('error when mutating puppy diet');
-} */
+			} */
 
 		} else if (bigFeatures[featureIndex] === 'reproduction') {
 			// implement after implementing sexual reproduction
@@ -296,29 +292,211 @@ function brainSimulation (llama, ground, llamas) {
 		saveInfo(`../logs/llama_0.json`, newAction);
 		saveInfo(`../logs/llama_0.json`, '-');
 	}
+	return newAction;
 
 }
 
 // decides which action a llama will take
 function decideAction(motorSignals) {
 	
-	//const relevantSignals = motorSignals.slice(0, 6);
+	/* an explanation of what is going on here
+
+	>> tl,dr: apply a hamming code to the motor signals and map a range of the output to the each action
+	
+	at first I implemented 5 motor signals for the llama brain and this was the solution for deciding an action:
+	
 	const biggestSignal  = indexOfMax(motorSignals);
 
- 	if (biggestSignal === 0) {
+		if (biggestSignal === 0) {
+			return 'dull';
+		} else if (biggestSignal === 1) {
+			return 'eat';
+		} else if (biggestSignal === 2) {
+			return 'left';
+		} else if (biggestSignal === 3) {
+			return 'down';
+		} else if (biggestSignal === 4) {
+			return 'right';
+		} else if (biggestSignal === 5) {
+			return 'up';
+		} else if (biggestSignal === 6) {
+			return 'reproduce';
+		}
+
+	but multiple shortcomings arose, e.g.:
+		
+		- there could be multiple actions with maximum value at the same time, and no way to decide between them
+		  (in the implementation above, llama would choose the one that came first on the if/else-if blocks)
+		  
+		- very small differences in the motor signals could drastically change action
+		  (i guess it is highly non-linear, which is hard for llama to control)
+	
+	instead, I thought, I could 'binarize' the motor signals, by passing them through a step function
+
+		if signal > 0.5 then binSignal = 1;
+		else binSignal = 0;
+	
+	the resulting binary array could then be checked for specific values, each one representing an action
+	this way there would be no conflict. For example:
+	
+		0000000 <= 'dull'
+		1010101 <= 'eat'
+		0000110 <= 'left'
+		0001100 <= 'down'
+		0011000 <= 'right'
+		0110000 <= 'up'
+		1111111 <= 'reproduce'
+
+	... but that would leave a lot of output possibilities useless (7 bits = 2^7 possibilities)
+	
+	it would be tempting to reduce the number of outputs to the minimum necessary:
+
+		000 <= 'dull'
+		010 <= 'dull'
+		101 <= 'eat'
+		001 <= 'left'
+		100 <= 'down'
+		011 <= 'right'
+		110 <= 'up'
+		111 <= 'reproduce'
+
+	... but this is not ideal, since some actions differ by just one bit, which could be flipped by mistake by the llama,
+	    again making it too non-linear and hard to control
+	
+	a compromise solution would be the two-out-of-five code, which can encode 10 numbers in combinations of 11 and 000
+
+		0 11000
+		1 00011
+		2 00101
+		3 00110
+		4 01001
+		5 01010
+		6 01100
+		7 10001
+		8 10010
+		9 10100
+
+	we could use up to 10 out of 32 possible numbers, lefting 22 as "errors" to which we could assign "dull".
+	this did not work as well as I expected, llamas had mostly dull responses.
+	I then tried assigning the 22 left-outs to a random action, but llamas just got too crazy
+	
+	at the end, I implemented a hamming code.
+	motor signals are first binarized (which introduces non-linerity, but not a huge problem as there will be correction for errors):
+		
+		if signal > 0.5 then binSignal = 1;
+		else binSignal = 0;
+
+	then the hamming(15,7) is applied: the first bit is ignored, 4 other bits are parity checkers and 11 are data
+
+		xab0
+		c000
+		d000
+		0000
+
+		x 		=> ignored. Could be used for additional parity checking in the future
+		a,b,c,d => bits for parity checking
+		0		=> data
+
+		in a linear array this looks like: [x,a,b,0,c,0,0,0,d,0,0,0,0,0,0,0]
+	
+	we then check the array for all positions with a 1
+	then we XOR the positions
+	the result of the XOR is the position of the wrong bit (if there is a one-bit error by the llama) or 0 (no one-bit errors)
+		
+		x a b 0 c 0 0 0 d 0 0  0  0  0  0  0  <= bit string
+		0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 <= positions
+			  3   5 6 7   9 10 11 12 13 14 15 <= data positions
+
+		errorPosition = (positions of every 1 in bit string) XOR(^) one another
+		if errorPosition is even, return data (->action)
+		if errorPosition is odd, flip bit at the position [errorPosition]
+
+	after correcting possible one-bit errors, we must choose the actions.
+	since we have 11 bits of data, that still leaves 2^11 possible outputs, from which we want just 7.
+	so we divide the output in 7 ranges with size (2^11)/7 and attribute each range to an output.
+
+	this solution is imune to one-bit errors and allow llamas to express the desired action in clusters of outputs.
+
+		(only data bits shown)
+
+		from 000 0000 0000 to 001 0001 0010 <= 'dull'
+		from 001 0001 0011 to 010 0000 1111 <= 'eat'
+		from 010 0001 0000 to 011 0001 1101 <= 'left'
+		and so on...
+
+	nonetheless, a future improved solution could group together outputs in a way that gives maximum hamming distances between different actions
+
+	*/
+
+	let binarizedSignals = new Array (motorSignals.length);
+	for (let i = 0; i < motorSignals.length; i++) {
+		if (motorSignals[i] > 0.5) {
+			binarizedSignals[i] = 1;
+		} else {
+			binarizedSignals[i] = 0;
+		}
+	}
+		
+	let onesPositions = [];
+	for (let i = 0; i < binarizedSignals.length; i++) {
+		if (binarizedSignals[i] === 1) {
+			onesPositions.push(i);
+		}
+	}
+	let errorPosition = 0;
+	if (onesPositions.length > 0) {
+		errorPosition = onesPositions[0];
+		for (let i = 1; i < onesPositions.length; i++) {
+			errorPosition ^= onesPositions[i];
+		}
+	}
+
+	if (errorPosition !== 0) {
+		// flips bit that caused error
+		if (binarizedSignals[errorPosition] === 0) {
+			binarizedSignals[errorPosition] = 1;
+		} else {
+			binarizedSignals[errorPosition] = 0;
+		}
+	}
+
+	let data = [
+		binarizedSignals[3],
+		binarizedSignals[5],
+		binarizedSignals[6],
+		binarizedSignals[7],
+		binarizedSignals[9],
+		binarizedSignals[10],
+		binarizedSignals[11],
+		binarizedSignals[12],
+		binarizedSignals[13],
+		binarizedSignals[14],
+		binarizedSignals[15]
+	]
+
+	let decimalData = 0;
+	for (let i = 0; i < data.length; i++) {
+		decimalData += data[i] * Math.pow(2, i);
+	}
+
+	const range = Math.floor(Math.pow(2,11) / 7);
+
+	if (decimalData < range) {
 		return 'dull';
-	} else if (biggestSignal === 1) {
+	} else if (decimalData < 2 * range) {
 		return 'eat';
-	} else if (biggestSignal === 2) {
+	} else if (decimalData < 3 * range) {
 		return 'left';
-	} else if (biggestSignal === 3) {
+	} else if (decimalData < 4 * range) {
 		return 'down';
-	} else if (biggestSignal === 4) {
+	} else if (decimalData < 5 * range) {
 		return 'right';
-	} else if (biggestSignal === 5) {
+	} else if (decimalData < 6 * range) {
 		return 'up';
-	} else if (biggestSignal === 6) {
+	} else if (decimalData < 7 * range) {
 		return 'reproduce';
+	} else {
+		return 'dull';
 	}
 
 }
