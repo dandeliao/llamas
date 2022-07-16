@@ -1,4 +1,5 @@
-const { indexOfMax, warpPosition, toLinearArray, randomInteger } = require("./utils");
+const { indexOfMax, warpPosition, toLinearArray, randomUniqueColor, randomInteger, randomRealNumber, coinFlip, saveInfo } = require("./utils");
+const { generateLayer } = require('./createWorld');
 const _ = require('lodash');
 const { sortedLastIndexOf } = require("lodash");
 
@@ -31,6 +32,41 @@ function fieldOfView (llama, ground) {
 
 	return field;
 
+}
+
+// llama radar for detecting nearby llamas
+function fieldOfLlamaRadar (llama, ground, llamas) {
+
+	const field = new Array ();
+	const lineStart = 	llama.line 	 - llama.viewRange;
+	const lineEnd = 	llama.line 	 + llama.viewRange;
+	const columnStart =	llama.column - llama.viewRange;
+	const columnEnd = 	llama.column + llama.viewRange;
+
+	if ((lineStart !== lineEnd) && (columnStart !== columnEnd)) {
+		for (let l = lineStart; l <= lineEnd; l++) {
+			let fieldLine = new Array ();
+			for (let c = columnStart; c <= columnEnd; c++) {
+				let warped = warpPosition(l, c, ground.length, ground[0].length); // gets position in a round world
+				let found = false;
+				for (k = 0; k < llamas.length; k++) {
+					if ((llamas[k].line === warped.line) && (llamas[k].column === warped.column)) {
+						found = true;
+					}
+				}
+				if (found) {
+					fieldLine.push(4);
+				} else {
+					fieldLine.push(0);
+				}
+			}
+			field.push(fieldLine);
+		}
+	} else {
+		field.push(4); // if fielOfView is 0, detects itself
+	}
+	
+	return field;
 }
 
 // ---
@@ -224,10 +260,15 @@ function neuronActivation (signals, neuron) {
 }
 
 // brain simulation
-function brainSimulation (llama, ground) {
+function brainSimulation (llama, ground, llamas) {
 
 	const sight = fieldOfView(llama, ground);
 	let signals = toLinearArray(sight);
+	const radar = fieldOfLlamaRadar(llama, ground, llamas);
+	let llamaRadar = toLinearArray(radar);
+	for (i = 0; i < llamaRadar.length; i++) {
+		signals.push(llamaRadar[i]);
+	}
 	signals.push(llama.energy);
 	console.log('sensory signals of a llama:', signals);
 
