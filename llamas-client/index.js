@@ -30,18 +30,18 @@ function drawMap (canvas, ground) {
 	let palette = colorPalette(colorLow, colorHigh, 5);
 
 	// these are NOT the same as css width and height!
-	canvas.width = ground.length * scale;
-	canvas.height = ground[0].length * scale;
+	canvas.width = ground[0].length * scale;
+	canvas.height = ground.length * scale;
 
 	const ctx = canvas.getContext('2d');
 
 	for (let i = 0; i < ground.length; i++) {
 		for (let j = 0; j < ground[0].length; j++) {
-			let value = ground[j][i];
+			let value = ground[i][j];
 
 			let color = palette[value];
 			ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-			ctx.fillRect(i * scale, j * scale, scale, scale);
+			ctx.fillRect(j * scale, i * scale, scale, scale);
 		}
 	}
 }
@@ -50,18 +50,23 @@ function drawMap (canvas, ground) {
 function drawLlamas (canvas, llamas) {
 
 	const ctx = canvas.getContext('2d');
-	ctx.strokeStyle = 'rgb(0, 0, 0)';
 	ctx.lineWidth = 3;
 
+	/* let x = llamas[0].line * scale;
+	let y = llamas[0].column * scale;
+	ctx.strokeStyle = `rgb(${llamas[0].color[0]}, ${llamas[0].color[1]}, ${llamas[0].color[2]})`;
+	ctx.strokeRect(y, x, scale, scale); */
+
 	for (let l = 0; l < llamas.length; l++) {
-		let y = llamas[l].line * scale;
-		let x = llamas[l].column * scale;
-		ctx.strokeRect(x, y, scale, scale);
+		let x = llamas[l].line * scale;
+		let y = llamas[l].column * scale;
+		ctx.strokeStyle = `rgb(${llamas[l].color[0]}, ${llamas[l].color[1]}, ${llamas[l].color[2]})`;
+		ctx.strokeRect(y, x, scale, scale);
 	}
 }
 
 // "animation" (playback)
-stepSize = 1000; // miliseconds
+stepSize = 240; // miliseconds
 function delay () {
 	return new Promise(r => setTimeout(r, stepSize));
 }
@@ -100,8 +105,6 @@ formSimulation.addEventListener('submit', e => {
 			console.log(timeline);
 
 			play(worldCanvas, timeline);
-			/* drawMap(worldCanvas, r.before.ground);
-			drawLlamas(worldCanvas, r.before.llamas); */
 
 		})
 
