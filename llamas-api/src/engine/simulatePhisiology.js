@@ -270,7 +270,11 @@ function brainSimulation (llama, ground, llamas) {
 		signals.push(llamaRadar[i]);
 	}
 	signals.push(llama.energy);
-	console.log('sensory signals of a llama:', signals);
+	if (llama === llamas[0]) {
+		saveInfo(`../logs/llama_0.json`, '--- input ---');
+		saveInfo(`../logs/llama_0.json`, signals);
+	}
+	//console.log('sensory signals of a llama:', signals);
 
 	for (let i = 0; i < llama.brain.length; i++) {
 		let outputSignals = new Array();
@@ -281,7 +285,17 @@ function brainSimulation (llama, ground, llamas) {
 		signals = _.cloneDeep(outputSignals); // output from a layer is the input (signals) for the next layer
 	}
 
-	return decideAction(signals);
+	if (llama === llamas[0]) {
+		saveInfo(`../logs/llama_0.json`, '--- output ---');
+		saveInfo(`../logs/llama_0.json`, signals);
+	}
+
+	let newAction = decideAction(signals);
+	if (llama === llamas[0]) {
+		saveInfo(`../logs/llama_0.json`, '--- action ---');
+		saveInfo(`../logs/llama_0.json`, newAction);
+		saveInfo(`../logs/llama_0.json`, '-');
+	}
 
 }
 
