@@ -106,20 +106,96 @@ function reproduce (llama) {
 			let puppy = _.cloneDeep(llama);
 			puppy.energy = 10;
 			puppy.action = 'dull';
-			//mutate(puppy);
+			mutate(puppy);
 			return puppy;
 		}
 	}
 	return null;
 }
 
-/* function mutate(puppy) {
+function mutate(puppy) {
 
-	let numberOfMutations = randomInteger(0, 20);
+	// neuron mutations
+	
+	let numberOfNeurons = 0;
+	for (let i = 0; i < puppy.brain.length; i++) {
+		for (let j = 0; j < puppy.brain[i].length; j++) {
+			numberOfNeurons++;
+		}
+	}
+	//console.log('number of neurons:', numberOfNeurons);
+	//let nmFactor = 0.02; // max neuronal mutation factor = max % of neuron mutations at birth
+	let nmFactor = (puppy.color[0] + 
+					puppy.color[1] + 
+					puppy.color[2])
+					/ (255 * 3 * 10); // this is a workaround for allowing natural selection to affect the mutation factor. Additionally, we get to see it expressed by the brightness of the color
+	let numberOfNeuronMutations = randomInteger(1, nmFactor * numberOfNeurons);
+	//console.log('number of neuron mutations:', numberOfNeuronMutations);
+	for (let i = 0; i < numberOfNeuronMutations; i++) {
+		let layer = randomInteger(0, puppy.brain.length - 1);
+		let neuronNumber = randomInteger(0, puppy.brain[layer].length - 1);
+		let neuron = puppy.brain[layer][neuronNumber];
+		let newWeights = new Array(neuron.weights.length);
+
+		for (let k = 0; k < newWeights.length; k++) {
+			newWeights[k] = randomRealNumber(-1, 1);
+		}
+
+		puppy.brain[layer][neuronNumber] = {
+			'bias': randomRealNumber(-2, 2),
+			'weights': newWeights
+		}
+	}
 
 
+	// big feature mutations
+	let numberOfBigFeatureMutations = randomInteger(0, 1);
+	let bigFeatures = ['viewRange', 'diet', 'reproduction', 'color', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none'];
 
+	let alreadyMutated = [];
+	for (let i = 0; i < numberOfBigFeatureMutations; i++) {
+		let featureIndex = randomInteger(0, bigFeatures.length - 1);
+		while (alreadyMutated.includes(featureIndex)) {
+			featureIndex = randomInteger(0, bigFeatures.length - 1);
+		}
+
+		if (bigFeatures[featureIndex] === 'viewRange') {
+			puppy.color = randomUniqueColor([puppy.color]); // also changes color when viewRange changes
+			let viewRange = randomInteger(0, 2); // 0 => 1x1 (own) square, 1 => 3x3 square, 2 => 5x5 square
+			let sizeOfViewRange = Math.pow((2 * viewRange) + 1, 2);
+			let sizeOfSensoryInput = sizeOfViewRange + sizeOfViewRange + 1; // sensory data = visual input + llama radar + energy level
+			while (sizeOfSensoryInput === puppy.brain[0].length) {
+				// repeat until it is different
+				viewRange = randomInteger(0, 2);
+				sizeOfViewRange = Math.pow((2 * viewRange) + 1, 2);
+				sizeOfSensoryInput = sizeOfViewRange + sizeOfViewRange + 1;
+			}
+			let firstLayer = generateLayer(puppy.brain[0].length, sizeOfSensoryInput); // doesn't change number of neurons in the first layer, just the number of inputs. This allows for changing just the first layer and keeping the hidden ones, since the number of outputs from the first layer remain the same.
+			puppy.brain[0] = firstLayer;
+
+		} else if (bigFeatures[featureIndex] === 'diet') {
+			/* puppy.color = randomUniqueColor([puppy.color]); // also changes color when diet changes
+			if (puppy.diet === 'mana') {
+				puppy.diet = 'void';
+			} else if (puppy.diet === 'void') {
+				puppy.diet = 'mana';
+			} else {
+				console.log('error when mutating puppy diet');
 } */
+
+		} else if (bigFeatures[featureIndex] === 'reproduction') {
+			// implement after implementing sexual reproduction
+
+		} else if (bigFeatures[featureIndex] === 'color') {
+			//if (coinFlip()) {
+				//if (coinFlip()) {
+					puppy.color = randomUniqueColor([puppy.color]);	
+				//}
+			//}
+			
+		}
+	}
+}
 
 // ---
 // nervous system
